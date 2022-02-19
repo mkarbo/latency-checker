@@ -15,3 +15,6 @@ sudo docker-compose up -d
 And go to either `http://localhost:8086` (fluxdb UI) or `http://localhost:3000`.
 
 I might convert some of these into kubernetes manifests later or address ssl/https for python ping service (pretty sure it will break as is, but so far it just runs on a local Intel NUC)
+
+How I use it (you will have to setup your own dashboard):
+![image](https://user-images.githubusercontent.com/38499319/154818480-79ebd6dd-9582-42e1-9f58-0187a8304d15.png)
