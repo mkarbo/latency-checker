@@ -8,6 +8,7 @@ import logging
 from influxdb_client import InfluxDBClient, Point, WritePrecision, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
 org = os.getenv("INFLUXDB_ORG", "my-org")
 bucket = os.getenv("INFLUXDB_BUCKET", "my-bucket")
@@ -28,7 +29,6 @@ def get_ping_stats(
     hostname: str, domain_tag: str, host_type: str, count: int = 4
 ) -> Point:
     res = ping(hostname, timeout=1, count=count)
-
     point = (
         Point("latency")
         .tag("machine", machine_name)
