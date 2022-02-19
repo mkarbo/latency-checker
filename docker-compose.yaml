@@ -11,8 +11,8 @@ services:
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME:-admin}
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-changemeplease}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN:-changemeplease1234}
-      - DOCKER_INFLUXDB_INIT_ORG=my-org
-      - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-my-org}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-my-bucket}
     networks:
       - local_nw
 
@@ -53,8 +53,8 @@ services:
     networks:
     - local_nw
     environment:
-      - INFLUXDB_ORG=my-org
-      - INFLUXDB_BUCKET=my-bucket
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-my-org}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-my-bucket}
       - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN:-changemeplease1234}
       - INFLUXDB_HOSTNAME=influxdb
       - INFLUXDB_PORT=8086
