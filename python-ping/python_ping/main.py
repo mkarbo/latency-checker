@@ -49,11 +49,6 @@ with InfluxDBClient(url=url, token=token, org=org) as client:
     while True:
         try:
             sleep(1)
-            # point = get_ping_stats("google.com", "Google", "DNS")
-            # print(point)
-            # write_api.write(bucket, org, point)
-            # point = get_ping_stats("yousee.dk", "Yousee", "DNS")
-            # write_api.write(bucket, org, point)
             point = get_ping_stats("8.8.8.8", "Google", "IP")
             write_api.write(bucket, org, point)
             point = get_ping_stats("1.1.1.1", "Cloudflare", "IP")
