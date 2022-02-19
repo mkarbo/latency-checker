@@ -56,7 +56,6 @@ def write_point(
         write_api.write(bucket, org, point)
         return point
     except Exception as e:
-        logging.exception(e)
         raise e
 
 
@@ -87,5 +86,5 @@ with InfluxDBClient(url=url, token=token, org=org) as client:
                     point = future.result()
                     logging.info(point.to_line_protocol())
             except Exception as e:
-                print(f"Caught exception: {e}")
+                logging.exception(e)
                 sleep(1)
