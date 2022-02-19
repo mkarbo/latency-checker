@@ -8,8 +8,9 @@ services:
       - influxdb-storage:/var/lib/influxdb
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER-admin}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD-changemeplease}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-changemeplease}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN:-changemeplease1234}
       - DOCKER_INFLUXDB_INIT_ORG=my-org
       - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
     networks:
@@ -25,8 +26,8 @@ services:
       - influxdb
     environment:
       - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=${INFLUX_USER-admin}
-      - INFLUXDB_PASSWORD=${INFLUX_PASSWORD-changemeplease}
+      - INFLUXDB_USERNAME=${INFLUXDB_USERNAME:-admin}
+      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD:-changemeplease}
     networks:
       - local_nw
 
@@ -39,10 +40,25 @@ services:
     depends_on:
       - influxdb
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD-changemeplease}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changemeplease}
     networks:
       - local_nw
+
+  python-pinger:
+    build:
+      context: .
+      dockerfile: python-ping/Dockerfile
+    command: bash -c "poetry run python python_ping/main.py"
+    networks:
+    - local_nw
+    environment:
+      - INFLUXDB_ORG=my-org
+      - INFLUXDB_BUCKET=my-bucket
+      - INFLUXDB_TOKEN=${INFLUXDB_ADMIN_TOKEN:-changemeplease1234}
+      - INFLUXDB_HOSTNAME=influxdb
+      - INFLUXDB_PORT=8086
+
 
 volumes:
   influxdb-storage:
