@@ -80,11 +80,6 @@ with InfluxDBClient(url=url, token=token, org=org) as client:
                     domain_tag="Cloudflare",
                     host_type="IP",
                 )
-                # point = get_ping_stats("8.8.8.8", "Google", "IP")
-                # write_api.write(bucket, org, point)
-                # point = get_ping_stats("1.1.1.1", "Cloudflare", "IP")
-                # write_api.write(bucket, org, point)
-                # print(point.to_line_protocol())
                 for future in as_completed([google_future, cloudflare_future]):
                     exception = future.exception()
                     if exception is not None:
