@@ -2,8 +2,10 @@ import os
 from datetime import datetime
 from pythonping import ping
 from time import sleep
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
 
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client import InfluxDBClient, Point, WritePrecision, WriteApi
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 
@@ -44,16 +46,51 @@ def get_ping_stats(
     return point
 
 
+def write_point(
+    write_api: WriteApi, hostname: str, domain_tag: str, host_type: str
+) -> Point:
+    assert isinstance(write_api, WriteApi)
+    point = get_ping_stats(hostname, domain_tag, host_type)
+    assert isinstance(point, Point)
+    try:
+        write_api.write(bucket, org, point)
+        return point
+    except Exception as e:
+        logging.exception(e)
+        raise e
+
+
 with InfluxDBClient(url=url, token=token, org=org) as client:
     write_api = client.write_api(write_options=SYNCHRONOUS)
-    while True:
-        try:
-            sleep(1)
-            point = get_ping_stats("8.8.8.8", "Google", "IP")
-            write_api.write(bucket, org, point)
-            point = get_ping_stats("1.1.1.1", "Cloudflare", "IP")
-            write_api.write(bucket, org, point)
-            print(point.to_line_protocol())
-        except Exception as e:
-            print(f"Caught exception: {e}")
-            sleep(1)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        while True:
+            try:
+                sleep(1)
+                google_future = executor.submit(
+                    write_point,
+                    write_api=write_api,
+                    hostname="8.8.8.8",
+                    domain_tag="Google",
+                    host_type="IP",
+                )
+                cloudflare_future = executor.submit(
+                    write_point,
+                    write_api=write_api,
+                    hostname="1.1.1.1",
+                    domain_tag="Cloudflare",
+                    host_type="IP",
+                )
+                # point = get_ping_stats("8.8.8.8", "Google", "IP")
+                # write_api.write(bucket, org, point)
+                # point = get_ping_stats("1.1.1.1", "Cloudflare", "IP")
+                # write_api.write(bucket, org, point)
+                # print(point.to_line_protocol())
+                for future in as_completed([google_future, cloudflare_future]):
+                    exception = future.exception()
+                    if exception is not None:
+                        raise exception
+                    point = future.result()
+                    logging.info(point.to_line_protocol())
+            except Exception as e:
+                print(f"Caught exception: {e}")
+                sleep(1)
