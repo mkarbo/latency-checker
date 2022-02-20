@@ -1,12 +1,11 @@
-import os
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
-from pythonping import ping
-from time import sleep
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import os
+from time import sleep
 
-from influxdb_client import InfluxDBClient, Point, WritePrecision, WriteApi
-from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client import InfluxDBClient, Point, WriteApi, WritePrecision
+from pythonping import ping
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
 
@@ -59,32 +58,33 @@ def write_point(
         raise e
 
 
+def log_handler(future: Future[Point]):
+    exception = future.exception()
+    if exception is not None:
+        logging.exception(exception)
+    else:
+        point = future.result()
+        logging.info(point.to_line_protocol())
+
+
 with InfluxDBClient(url=url, token=token, org=org) as client:
-    write_api = client.write_api(write_options=SYNCHRONOUS)
+    write_api = client.write_api()
     with ThreadPoolExecutor(max_workers=4) as executor:
         while True:
-            try:
-                sleep(1)
-                google_future = executor.submit(
-                    write_point,
-                    write_api=write_api,
-                    hostname="8.8.8.8",
-                    domain_tag="Google",
-                    host_type="IP",
-                )
-                cloudflare_future = executor.submit(
-                    write_point,
-                    write_api=write_api,
-                    hostname="1.1.1.1",
-                    domain_tag="Cloudflare",
-                    host_type="IP",
-                )
-                for future in as_completed([google_future, cloudflare_future]):
-                    exception = future.exception()
-                    if exception is not None:
-                        raise exception
-                    point = future.result()
-                    logging.info(point.to_line_protocol())
-            except Exception as e:
-                logging.exception(e)
-                sleep(1)
+            sleep(1)
+            google_future = executor.submit(
+                write_point,
+                write_api=write_api,
+                hostname="8.8.8.8",
+                domain_tag="Google",
+                host_type="IP",
+            )
+            google_future.add_done_callback(log_handler)
+            cloudflare_future = executor.submit(
+                write_point,
+                write_api=write_api,
+                hostname="1.1.1.1",
+                domain_tag="Cloudflare",
+                host_type="IP",
+            )
+            cloudflare_future.add_done_callback(log_handler)
